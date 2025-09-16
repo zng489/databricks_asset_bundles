@@ -18,7 +18,7 @@ winget install Databricks.DatabricksCLI
 ; The profile defined in the DEFAULT section is to be used as a fallback when no profile is explicitly specified.
 [DEFAULT]
 host  = https://adb-6523536500265509.9.azuredatabricks.net
-token = dapi89b696451baee2c72b5250293a479f2d
+token = 
 
 [meu-perfil]
 host      = https://dbc-636f7eed-7ad3.cloud.databricks.com

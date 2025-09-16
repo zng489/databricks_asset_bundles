@@ -1,0 +1,82 @@
+# =====================================================
+# Databricks Asset Bundle - Serverless (com notebooks)
+# =====================================================
+
+# BUNDLE: Configurações gerais do pacote
+bundle:
+  name: bricks  # Nome do bundle - usado como identificador único
+  #target: dev   # Ambiente alvo
+
+# WORKSPACE: Define onde e como conectar ao Databricks
+workspace:
+  host: https://dbc-2288932a-12a3.cloud.databricks.com
+  root_path: /Workspace/Users/zhang489yuan@gmail.com/${bundle.name}/${bundle.target}
+
+# ARTIFACTS: Define os arquivos que serão enviados para o Databricks
+artifacts:
+  # Notebook principal
+  main_notebook:
+    type: notebook
+    path: /Workspace/Users/zhang489yuan@gmail.com/${bundle.name}/${bundle.target}/
+    files:
+      - source: src/main.ipynb
+
+  # Segundo notebook - processamento avançado  
+  process_notebook:
+    type: notebook           # Tipo: notebook Databricks
+    # Onde será salvo: /Workspace/Users/.../bundles/databricks/dev/process
+    #path: ${workspace.root_path}/process
+    path: /Workspace/Users/zhang489yuan@gmail.com/${bundle.name}/${bundle.target}/
+    files:
+      - source: src/process.ipynb  # Arquivo local Python que será convertido em notebook
+
+
+  # Requisitos Python
+  requirements:
+    type: library
+    files:
+      - source: requirements.txt
+
+
+# TARGETS: Define diferentes ambientes (dev, prod, etc.)
+targets:
+  dev:
+    mode: development
+    resources:
+      jobs:
+        job_orquestrado:
+          name: Job Pipeline Orquestrado - ${bundle.name} (${bundle.target})
+          email_notifications:
+            on_success:
+              - zhang489yuan@gmail.com
+            on_failure:
+              - data-team@suaempresa.com
+
+
+          tasks:
+            - task_key: tarefa_main
+              notebook_task:
+                notebook_path: /Workspace/Users/zhang489yuan@gmail.com/bricks/dev/files/src/main
+
+            # SEGUNDA TAREFA: Executa o notebook process (após main terminar)
+            - task_key: tarefa_process     # Identificador único da tarefa
+              depends_on:                  # Define dependências
+                - task_key: tarefa_main    # Esta tarefa só roda após tarefa_main
+              notebook_task:               # Tipo de tarefa: execução de notebook
+                # Caminho do notebook no workspace
+                notebook_path: /Workspace/Users/zhang489yuan@gmail.com/bricks/dev/files/src/process
+
+# EXPLICAÇÃO DOS SÍMBOLOS ${}:
+# ${bundle.name}          → substitui por "bricks"
+# ${bundle.target}        → substitui por "dev"
+# ${workspace.root_path}  → substitui por "/Workspace/Users/zhang489yuan@gmail.com/bricks/dev"
+
+# FLUXO DE EXECUÇÃO:
+# 1. tarefa_main é executada primeiro (notebook main.ipynb)
+# 2. Emails de notificação são enviados conforme resultado
+
+# OBSERVAÇÃO SOBRE DEPENDÊNCIAS:
+# Para instalar o requirements.txt, você pode usar:
+# a) Associar o artifact 'requirements' ao cluster que o job vai usar.
+# b) Ou instalar dentro do notebook usando:
+#    %pip install -r /Workspace/Users/zhang489yuan@gmail.com/bricks/dev/requirements.txt

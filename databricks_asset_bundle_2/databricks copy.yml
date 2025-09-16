@@ -1,0 +1,119 @@
+# =====================================================
+# Databricks Asset Bundle - Serverless (com notebooks)
+# =====================================================
+# Este arquivo define um bundle Databricks que orquestra dois notebooks
+# em um pipeline de processamento de dados
+
+# BUNDLE: Configurações gerais do pacote
+bundle:
+  name: databricks  # Nome do bundle - usado como identificador único
+
+# WORKSPACE: Define onde e como conectar ao Databricks
+workspace:
+  host: https://dbc-2288932a-12a3.cloud.databricks.com  # URL do workspace Databricks
+  # Caminho raiz onde os arquivos serão implantados
+  # ${bundle.name} = "databricks" / ${bundle.target} = "dev"
+  root_path: /Workspace/Users/zhang489yuan@gmail.com/${bundle.name}/${bundle.target}
+
+# ARTIFACTS: Define os arquivos que serão enviados para o Databricks
+artifacts:
+  # Primeiro notebook - processamento principal
+  reading_duck_notebook:
+    type: notebook           # Tipo: notebook Databricks
+    # Onde será salvo: /Workspace/Users/.../bundles/databricks/dev/main
+    #path: ${workspace.root_path}/main
+    path: /Workspace/Users/zhang489yuan@gmail.com/${bundle.name}/${bundle.target}
+    files:
+      - source: src/reading_duck.py  # Arquivo local Python que será convertido em notebook
+  
+  # Segundo notebook - processamento avançado  
+  process_notebook:
+    type: notebook           # Tipo: notebook Databricks
+    # Onde será salvo: /Workspace/Users/.../bundles/databricks/dev/process
+    #path: ${workspace.root_path}/process
+    path: /Workspace/Users/zhang489yuan@gmail.com/${bundle.name}/${bundle.target}
+    files:
+      - source: src/process.py  # Arquivo local Python que será convertido em notebook
+
+  # Terceiro notebook - processamento avançado  
+  analysis_notebook:
+    type: notebook           # Tipo: notebook Databricks
+    # Onde será salvo: /Workspace/Users/.../bundles/databricks/dev/process
+    #path: ${workspace.root_path}/process
+    path: /Workspace/Users/zhang489yuan@gmail.com/${bundle.name}/${bundle.target}
+    files:
+      - source: src/analysis.py  # Arquivo local Python que será convertido em notebook
+
+
+
+# TARGETS: Define diferentes ambientes (dev, prod, etc.)
+targets:
+  # databricks bundle deploy -t dev 
+  dev:                      # Nome do ambiente de desenvolvimento
+    mode: development       # Modo de desenvolvimento (habilita certas funcionalidades)
+
+    # RESOURCES: Define recursos Databricks (jobs, clusters, pipelines, etc.)
+    resources:
+      # JOBS: Seção para definir trabalhos/pipelines
+      jobs:
+        job_orquestrado:    # Nome interno do job
+          # Nome que aparece na interface do Databricks
+          # Resultado: "Job Pipeline Orquestrado - databricks (dev)"
+          name: Job Pipeline Orquestrado - ${bundle.name} (${bundle.target})
+
+          # EMAIL NOTIFICATIONS: Configuração de notificações
+          email_notifications:
+            on_success:     # Emails enviados quando job termina com sucesso
+              - zhang.yuan@senaicni.com.br
+            on_failure:     # Emails enviados quando job falha
+              - data-team@suaempresa.com
+
+          # TASKS: Lista de tarefas que compõem o job
+          # files/src/ Deve ser acrescentado
+          tasks:
+            # PRIMEIRA TAREFA: Executa o notebook main
+            #- task_key: tarefa_main
+            #  python_task:
+            #   source: ${workspace.root_path}/files/src/reading_duck.py
+            - task_key: tarefa_main        # Identificador único da tarefa
+              notebook_task:               # Tipo de tarefa: execução de notebook
+                # Caminho do notebook no workspace
+                notebook_path: ${workspace.root_path}/src/reading_duck
+
+              # em serverless tasks você não pode declarar libraries: dentro de cada task.
+              #libraries:
+              #  - pypi:
+              #      package: requests              
+
+
+            # SEGUNDA TAREFA: Executa o notebook process (após main terminar)
+            - task_key: tarefa_process     # Identificador único da tarefa
+              depends_on:                  # Define dependências
+                - task_key: tarefa_main    # Esta tarefa só roda após tarefa_main
+              notebook_task:               # Tipo de tarefa: execução de notebook
+                # Caminho do notebook no workspace
+                notebook_path: ${workspace.root_path}/src/process
+
+
+            # TAREFA 3 (depende da 1, mas não da 2)
+            - task_key: tarefa_analysis
+              depends_on:
+                - task_key: tarefa_main
+              notebook_task:
+                notebook_path: ${workspace.root_path}/src/analysis
+
+
+
+# EXPLICAÇÃO DOS SÍMBOLOS ${}:
+# ${bundle.name}          → substitui por "databricks"
+# ${bundle.target}        → substitui por "dev" 
+# ${workspace.root_path}  → substitui por "/Workspace/Users/zhang489yuan@gmail.com/bundles/databricks/dev"
+#
+# EXEMPLO DE SUBSTITUIÇÃO:
+# path: ${workspace.root_path}/main
+# vira: /Workspace/Users/zhang489yuan@gmail.com/bundles/databricks/dev/main
+#
+# FLUXO DE EXECUÇÃO:
+# 1. tarefa_main é executada primeiro (notebook main.py)
+# 2. Se tarefa_main terminar com sucesso, tarefa_process é executada (notebook process.py)
+# 3. Emails de notificação são enviados conforme resultado

@@ -55,7 +55,7 @@ auth_type = databricks-cli
 
 
 
-copy dapi27d53af75ea360c4462805371c4c2848
+
 
 databricks configure --delete --profile DEFAULT
 databricks configure --delete --profile <profile-name>

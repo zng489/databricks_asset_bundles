@@ -60,7 +60,6 @@ auth_type = databricks-cli
 databricks configure --delete --profile DEFAULT
 databricks configure --delete --profile <profile-name>
 
-# dapi317ff443414b9aae665b9195224913b4
 
 Name         Host                                                Valid
 DEFAULT      https://adb-6523536500265509.9.azuredatabricks.net  NO

@@ -1,0 +1,49 @@
+# =====================================================
+# Databricks Asset Bundle - Serverless (com notebooks)
+# =====================================================
+
+bundle:
+  name: databricks
+
+workspace:
+  host: https://dbc-2288932a-12a3.cloud.databricks.com
+  root_path: /Workspace/Users/zhang489yuan@gmail.com/bundles/${bundle.name}/${bundle.target}
+
+artifacts:
+  main_notebook:
+    type: file
+    path: ${workspace.root_path}/main
+    files:
+      - source: src/main.py
+
+  process_notebook:
+    type: file
+    #type: notebook
+    path: ${workspace.root_path}/process
+    files:
+      - source: src/process.py
+
+targets:
+  d:
+    mode: development
+
+    resources:
+      jobs:
+        job_orquestrado:
+          name: Job Pipeline Orquestrado - ${bundle.name} (${bundle.target})
+
+          email_notifications:
+            on_success:
+              - zhang489yuan@gmail.com
+            on_failure:
+              - data-team@suaempresa.com
+
+          tasks:
+            - task_key: tarefa_main
+              notebook_task:
+                notebook_path: ${workspace.root_path}
+            - task_key: tarefa_process
+              depends_on:
+                - task_key: tarefa_main
+              notebook_task:
+                notebook_path: ${workspace.root_path}
